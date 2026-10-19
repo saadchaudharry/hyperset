@@ -101,6 +101,7 @@ If it doesn't load, allow Python through the computer's firewall.
 | `python` not found | Use `python3` (Mac / Linux), or reinstall Python with **Add to PATH** ticked (Windows). |
 | `No module named django` | Activate the virtual environment first (step 3). |
 | "Add your Gemini API key" message | Add the key in Settings → AI settings. |
+| "AI request failed: No module named 'mcp'" | Your install has a different AI library version. In the project folder, with the virtual environment active, run `pip install -r requirements.txt` again, then restart `runserver`. |
 | "AI request failed" | Check the key, that the model name starts with `gemini/`, and that you're online. |
 | Port already in use | Run `python manage.py runserver 8001` and open port 8001. |
 | Forgot password, no email set up | Run `python manage.py changepassword <username>`, or copy the reset link from the terminal (see [configuration](configuration.md#password-reset-emails)). |

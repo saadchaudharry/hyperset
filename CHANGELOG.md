@@ -4,6 +4,9 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Fixed
+- AI coach and calorie estimates failing with "No module named 'mcp'": the AI library is now pinned to the tested version and `mcp` is installed with it.
+
 ## [1.1.0] - 2026-10-19
 
 ### Changed

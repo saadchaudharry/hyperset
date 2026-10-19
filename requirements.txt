@@ -1,5 +1,7 @@
 Django>=5.1,<5.3
-litellm>=1.70
+# AI client. Pinned to the tested version; some versions import mcp without declaring it.
+litellm==1.106.0
+mcp>=1.9
 markdown>=3.5
 gunicorn>=22
 whitenoise>=6.6
