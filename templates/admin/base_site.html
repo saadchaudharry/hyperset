@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | HYPERSET admin{% endblock %}
+
+{% block extrahead %}
+<link rel="icon" type="image/png" href="{% static 'tracker/brand/favicon-96x96.png' %}" sizes="96x96">
+<style>
+  /* HYPERSET colours for the Django admin, in both its light and dark modes */
+  :root, html[data-theme="light"], html[data-theme="dark"] {
+    --primary: #0a0b0d;
+    --secondary: #141619;
+    --accent: #c8f53c;
+    --primary-fg: #f1f4ee;
+    --header-color: #f1f4ee;
+    --header-branding-color: #c8f53c;
+    --header-bg: #0a0b0d;
+    --header-link-color: #f1f4ee;
+    --breadcrumbs-bg: #141619;
+    --breadcrumbs-link-fg: #c8f53c;
+    --breadcrumbs-fg: #8b928c;
+    --link-fg: #4b7a00;
+    --link-hover-color: #2f4d00;
+    --link-selected-fg: #4b7a00;
+    --button-bg: #0a0b0d;
+    --button-hover-bg: #2b3034;
+    --default-button-bg: #c8f53c;
+    --default-button-hover-bg: #dcff6b;
+    --selected-row: #f3fdd9;
+  }
+  html[data-theme="dark"] { --link-fg: #c8f53c; --link-hover-color: #dcff6b; --link-selected-fg: #c8f53c; --selected-row: #1c240b; }
+  @media (prefers-color-scheme: dark) {
+    html[data-theme="auto"] { --link-fg: #c8f53c; --link-hover-color: #dcff6b; --link-selected-fg: #c8f53c; --selected-row: #1c240b; }
+  }
+  .button.default, input[type=submit].default { color: #0a0b0d !important; }
+  #branding h1 { display: flex; align-items: center; gap: 10px; }
+  #branding img { height: 26px; width: auto; }
+</style>
+{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}" style="display:flex;align-items:center;gap:10px">
+  <img src="{% static 'tracker/brand/hyperset-mark.png' %}" alt="" style="height:26px;width:auto">
+  <img src="{% static 'tracker/brand/hyperset-wordmark.png' %}" alt="HYPERSET" style="height:14px;width:auto">
+  <span style="font-size:13px;color:#8b928c;font-weight:600">admin</span>
+</a></div>
+{% if user.is_anonymous %}{% include "admin/color_theme_toggle.html" %}{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

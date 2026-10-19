@@ -1,0 +1,50 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}Today{% endblock %} · HYPERSET</title>
+{% include "tracker/_head.html" %}
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{% url 'home' %}" aria-label="HYPERSET home">
+      <img src="{% static 'tracker/brand/hyperset-mark.png' %}" alt="">
+      <img class="wordmark" src="{% static 'tracker/brand/hyperset-wordmark.png' %}" alt="HYPERSET">
+    </a>
+    <nav class="topnav">
+      <a href="{% url 'home' %}" class="{% if active == 'day' %}on{% endif %}">Today</a>
+      <a href="{% url 'plan' %}" class="{% if active == 'plan' %}on{% endif %}">Plan</a>
+      <a href="{% url 'exercises' %}" class="{% if active == 'exercises' %}on{% endif %}">Exercises</a>
+      <a href="{% url 'coach' %}" class="{% if active == 'coach' %}on{% endif %}">AI Coach</a>
+      <a href="{% url 'profile' %}" class="{% if active == 'profile' %}on{% endif %}">Profile</a>
+    </nav>
+    <div class="topactions">
+      {% if user.is_staff %}<a class="admin-link" href="{% url 'admin:index' %}">Settings</a>{% endif %}
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button class="logout-btn">Log out</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="wrap">
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}<p class="msg {{ message.tags }}">{{ message }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <nav class="tabbar" aria-label="Main">
+    <a href="{% url 'home' %}" class="{% if active == 'day' %}on{% endif %}"><span class="ico ico-day"></span>Today</a>
+    <a href="{% url 'plan' %}" class="{% if active == 'plan' %}on{% endif %}"><span class="ico ico-plan"></span>Plan</a>
+    <a href="{% url 'exercises' %}" class="{% if active == 'exercises' %}on{% endif %}"><span class="ico ico-lib"></span>Exercises</a>
+    <a href="{% url 'coach' %}" class="{% if active == 'coach' %}on{% endif %}"><span class="ico ico-coach"></span>Coach</a>
+    <a href="{% url 'profile' %}" class="{% if active == 'profile' %}on{% endif %}"><span class="ico ico-profile"></span>Profile</a>
+  </nav>
+  {% block scripts %}{% endblock %}
+  <script src="{% static 'tracker/app.js' %}"></script>
+</body>
+</html>

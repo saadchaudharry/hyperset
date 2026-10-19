@@ -1,0 +1,39 @@
+{% extends "tracker/base.html" %}
+{% block title %}AI Coach{% endblock %}
+{% block content %}
+
+<section class="tile hero coachhero">
+  <div>
+    <span class="label">AI Coach</span>
+    <h1>Ask your coach</h1>
+    <p>The coach reads your plan, workouts and food log before it answers.</p>
+  </div>
+  {% if chat %}
+    <form method="post" action="{% url 'coach_clear' %}">
+      {% csrf_token %}
+      <button class="btn ghost small light">Clear chat</button>
+    </form>
+  {% endif %}
+</section>
+
+<section class="chat" id="chat">
+  {% for m in chat %}
+    <div class="bubble {{ m.role }}">{{ m.html }}</div>
+  {% empty %}
+    <div class="tile empty" id="chat-empty">No messages yet. Try one of the questions below.</div>
+  {% endfor %}
+</section>
+
+<div class="suggest">
+  <button type="button" class="chip-btn" data-ask="What should I eat for the rest of today to hit my calories and protein?">Rest of today's food</button>
+  <button type="button" class="chip-btn" data-ask="Review my workouts this week. What did I miss and what should I do next?">Review my week</button>
+  <button type="button" class="chip-btn" data-ask="What weights and reps should I aim for in my next workout?">Next workout targets</button>
+  <button type="button" class="chip-btn" data-ask="Am I on track for lean muscle gain based on the last 14 days?">Am I on track?</button>
+</div>
+
+<form class="composer" id="composer" data-url="{% url 'coach_send' %}">
+  {% csrf_token %}
+  <textarea id="coach-input" rows="1" placeholder="Ask your coach…" required></textarea>
+  <button class="btn" id="coach-send">Send</button>
+</form>
+{% endblock %}

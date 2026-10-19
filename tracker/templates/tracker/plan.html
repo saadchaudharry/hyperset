@@ -1,0 +1,71 @@
+{% extends "tracker/base.html" %}
+{% block title %}Weekly plan{% endblock %}
+{% block content %}
+
+<section class="tile hero">
+  <span class="label">Weekly template</span>
+  <h1>Your plan</h1>
+  <p>Set the workout for each weekday. Every day in the log uses this template. Days with no exercises are rest days.</p>
+</section>
+
+<nav class="week" aria-label="Jump to day">
+  {% for d in days %}
+    <a class="wd{% if d.weekday == today_weekday %} on{% endif %}{% if not d.items.all %} rest{% endif %}" href="#day-{{ d.weekday }}">
+      <span class="dn">{{ d.get_weekday_display|slice:":3" }}</span>
+      <span class="dt">{{ d.short_title }}</span>
+    </a>
+  {% endfor %}
+</nav>
+
+{% for d in days %}
+  <section class="tile planday" id="day-{{ d.weekday }}">
+    <form class="planhead" method="post" action="{% url 'update_plan_day' d.weekday %}">
+      {% csrf_token %}
+      <span class="label">{{ d.get_weekday_display }}</span>
+      <input class="title-input" name="title" value="{{ d.title }}" aria-label="{{ d.get_weekday_display }} title">
+      <input name="focus" value="{{ d.focus }}" placeholder="Focus for the day" aria-label="Focus">
+      <button class="btn ghost small">Save day</button>
+    </form>
+
+    <div class="planitems">
+      {% for item in d.items.all %}
+        <form class="planitem" method="post" action="{% url 'update_plan_item' item.id %}">
+          {% csrf_token %}
+          <div class="pi-name">
+            <span class="num">{{ forloop.counter|stringformat:"02d" }}</span>
+            <a href="{% url 'exercise_detail' item.exercise.id %}">{{ item.exercise.name }}</a>
+          </div>
+          <div class="pi-fields">
+            <label><span>Sets</span><input type="number" name="sets" min="1" value="{{ item.sets }}"></label>
+            <label><span>Reps</span><input name="reps" value="{{ item.reps }}"></label>
+            <label><span>Rest</span><input name="rest" value="{{ item.rest }}"></label>
+          </div>
+          <div class="pi-actions">
+            <button class="btn small" name="action" value="save">Save</button>
+            <button class="icon-btn" name="action" value="up" aria-label="Move up">↑</button>
+            <button class="icon-btn" name="action" value="down" aria-label="Move down">↓</button>
+            <button class="icon-btn danger" name="action" value="delete" aria-label="Remove">×</button>
+          </div>
+        </form>
+      {% empty %}
+        <p class="muted">Rest day.</p>
+      {% endfor %}
+    </div>
+
+    <form class="planadd" method="post" action="{% url 'add_plan_item' d.weekday %}">
+      {% csrf_token %}
+      <input name="name" list="exercise-names" placeholder="Add exercise…" required aria-label="Exercise">
+      <div class="pi-fields">
+        <label><span>Sets</span><input type="number" name="sets" min="1" value="3"></label>
+        <label><span>Reps</span><input name="reps" value="8-12"></label>
+        <label><span>Rest</span><input name="rest" value="90 s"></label>
+      </div>
+      <button class="btn">Add</button>
+    </form>
+  </section>
+{% endfor %}
+
+<datalist id="exercise-names">
+  {% for name in exercise_names %}<option value="{{ name }}">{% endfor %}
+</datalist>
+{% endblock %}

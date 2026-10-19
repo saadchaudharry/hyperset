@@ -1,0 +1,166 @@
+{% extends "tracker/base.html" %}
+{% block title %}{{ day|date:"D j M" }}{% endblock %}
+{% block content %}
+
+<section class="datebar">
+  <a class="round" href="{% url 'day' prev_day.isoformat %}" aria-label="Previous day">‹</a>
+  <div class="datebar-mid">
+    <span class="label">{% if day == today %}Today{% else %}{{ day|date:"Y" }}{% endif %}</span>
+    <h1>{{ day|date:"l, j M" }}</h1>
+  </div>
+  <a class="round" href="{% url 'day' next_day.isoformat %}" aria-label="Next day">›</a>
+  <input class="datepick" type="date" id="datepick" value="{{ day.isoformat }}" aria-label="Pick a date">
+</section>
+
+<nav class="week" aria-label="This week">
+  {% for w in week %}
+    <a class="wd{% if w.date == day %} on{% endif %}{% if w.title == 'Rest' %} rest{% endif %}{% if w.date == today %} today{% endif %}" href="{% url 'day' w.date.isoformat %}">
+      <span class="dn">{{ w.date|date:"D" }}</span>
+      <span class="dt">{{ w.title }}</span>
+      {% if w.done %}<span class="tick" aria-label="Workout done"></span>{% endif %}
+    </a>
+  {% endfor %}
+</nav>
+
+<section class="bento">
+  <div class="tile stat cal">
+    <span class="label">Calories</span>
+    <b>{{ total_calories }}<small> / {{ profile.calorie_target }} kcal</small></b>
+    <div class="meter"><i style="width: {{ calorie_pct }}%"></i></div>
+  </div>
+  <div class="tile stat">
+    <span class="label">Protein</span>
+    <b>{{ total_protein|floatformat:0 }}<small> / {{ profile.protein_target_g }} g</small></b>
+    <div class="meter"><i style="width: {{ protein_pct }}%"></i></div>
+  </div>
+  <div class="tile stat">
+    <span class="label">Exercises done</span>
+    <b>{{ done_count }}<small> / {{ cards|length }}</small></b>
+  </div>
+  <div class="tile stat">
+    <span class="label">Sets logged</span>
+    <b>{{ set_count }}</b>
+  </div>
+</section>
+
+<section id="workout" class="section">
+  <div class="tile dayhead">
+    <span class="label">{{ day|date:"l" }} workout</span>
+    <h2>{{ plan_day.title|default:"Rest" }}</h2>
+    {% if plan_day.focus %}<p>{{ plan_day.focus }}</p>{% endif %}
+  </div>
+
+  <form class="tile addrow" id="add-exercise" method="post" action="{% url 'add_exercise_to_day' day.isoformat %}">
+    {% csrf_token %}
+    <label class="label" for="add-ex">Not in the plan? Add an exercise</label>
+    <div class="inline">
+      <input id="add-ex" name="name" list="exercise-names" placeholder="Search exercises…" required>
+      <button class="btn">Add</button>
+    </div>
+  </form>
+
+  {% for card in cards %}
+    <form class="tile excard{% if card.log.completed %} done{% endif %}" id="ex-{{ card.exercise.id }}" method="post" action="{% url 'save_exercise_log' day.isoformat card.exercise.id %}">
+      {% csrf_token %}
+      <div class="exhead">
+        <span class="num">{{ forloop.counter|stringformat:"02d" }}</span>
+        <div class="extitle">
+          <a href="{% url 'exercise_detail' card.exercise.id %}"><h3>{{ card.exercise.name }}</h3></a>
+          <div class="chips">
+            {% if card.item %}
+              <span class="chip dark">{{ card.item.sets }} × {{ card.item.reps }}</span>
+              {% if card.item.rest %}<span class="chip">Rest {{ card.item.rest }}</span>{% endif %}
+            {% else %}
+              <span class="chip">Extra</span>
+            {% endif %}
+            <span class="chip">{{ card.exercise.get_muscle_group_display }}</span>
+          </div>
+        </div>
+        <div class="exflags">
+          {% if card.log.completed %}<span class="badge">Done</span>{% endif %}
+          {% if not card.item %}
+            <button class="icon-btn" formaction="{% url 'remove_exercise_from_day' day.isoformat card.exercise.id %}" formnovalidate aria-label="Remove {{ card.exercise.name }} from this day" title="Remove from this day">×</button>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="sets" data-sets>
+        <div class="setrow head"><span>Set</span><span>Reps</span><span>Weight (kg)</span></div>
+        {% for reps, weight in card.rows %}
+          <div class="setrow">
+            <span class="setno">{{ forloop.counter }}</span>
+            <input type="number" name="reps" inputmode="numeric" min="0" value="{{ reps }}" placeholder="{{ card.item.reps|default:'reps' }}" aria-label="Reps">
+            <input type="number" name="weight" inputmode="decimal" min="0" step="0.25" value="{% if weight != '' %}{{ weight|floatformat:'-2' }}{% endif %}" placeholder="kg" aria-label="Weight in kg">
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="exactions">
+        <button type="button" class="btn ghost" data-add-set>+ Set</button>
+        <label class="check"><input type="checkbox" name="completed" {% if card.log.completed %}checked{% endif %}> Completed</label>
+        <button class="btn">Save</button>
+      </div>
+
+      {% if card.exercise.instructions %}
+        <details class="howto">
+          <summary>How to do it</summary>
+          <div class="howto-body">{{ card.exercise.instructions|linebreaksbr }}</div>
+        </details>
+      {% endif %}
+    </form>
+  {% empty %}
+    <div class="tile empty">Rest day. Nothing planned. Use the box above to log any exercise you did.</div>
+  {% endfor %}
+
+</section>
+
+<section id="food" class="section">
+  <h2 class="sectitle">Food</h2>
+  <form class="tile foodform" method="post" action="{% url 'add_food' day.isoformat %}" data-busy-text="Estimating calories…">
+    {% csrf_token %}
+    <div class="inline">
+      <select name="meal" aria-label="Meal">
+        {% for key, label in meal_choices %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <textarea name="description" rows="2" placeholder="What did you eat? e.g. 3 rotis, 1 katori dal, 150 g paneer bhurji" required>{{ food_draft }}</textarea>
+    <details class="manual">
+      <summary>I know the calories</summary>
+      <div class="inline">
+        <input type="number" name="calories" min="0" placeholder="kcal" aria-label="Calories">
+        <input type="number" name="protein" min="0" step="0.1" placeholder="Protein g" aria-label="Protein in grams">
+      </div>
+    </details>
+    <button class="btn wide">Add food · AI estimates calories</button>
+  </form>
+
+  {% for label, entries in meals %}
+    {% if entries %}
+      <div class="tile meal">
+        <span class="label">{{ label }}</span>
+        {% for f in entries %}
+          <div class="food">
+            <div class="food-main">
+              <p class="food-desc">{{ f.description }}</p>
+              <p class="food-macros">
+                <b>{{ f.calories }} kcal</b> · P {{ f.protein_g|floatformat:0 }} g · C {{ f.carbs_g|floatformat:0 }} g · F {{ f.fat_g|floatformat:0 }} g
+                {% if f.ai_estimated %}<span class="ai">AI</span>{% endif %}
+              </p>
+              {% if f.ai_notes %}<p class="food-notes">{{ f.ai_notes }}</p>{% endif %}
+            </div>
+            <form method="post" action="{% url 'delete_food' f.id %}">
+              {% csrf_token %}
+              <button class="icon-btn" aria-label="Delete {{ f.description }}">×</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endfor %}
+  {% if not has_food %}<div class="tile empty">Nothing logged yet. Add your first meal above.</div>{% endif %}
+</section>
+
+<datalist id="exercise-names">
+  {% for name in exercise_names %}<option value="{{ name }}">{% endfor %}
+</datalist>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}{% endblock %} · HYPERSET</title>
+{% include "tracker/_head.html" %}
+</head>
+<body>
+  <main class="authpage">
+    <div class="authcard">
+      <div class="authbrand">
+        <img class="authlogo" src="{% static 'tracker/brand/hyperset-mark.png' %}" alt="">
+        <img class="authwordmark" src="{% static 'tracker/brand/hyperset-wordmark.png' %}" alt="HYPERSET">
+        <span class="tagline">Train. Track. Fuel. Level Up.</span>
+        <h1>{% block heading %}{% endblock %}</h1>
+        <p>{% block intro %}{% endblock %}</p>
+      </div>
+      <div class="tile">{% block content %}{% endblock %}</div>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,154 @@
+{% extends "tracker/base.html" %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+
+<section class="tile hero">
+  <span class="label">My profile</span>
+  <h1>{{ user.get_username|capfirst }}</h1>
+  <p>{{ profile.goal }}</p>
+</section>
+
+<section class="bento">
+  <div class="tile stat cal">
+    <span class="label">Weight</span>
+    <b>{{ profile.weight_kg|floatformat:"-1" }}<small> kg</small></b>
+  </div>
+  <div class="tile stat"><span class="label">Height</span><b>{{ profile.height_cm }}<small> cm</small></b></div>
+  <div class="tile stat"><span class="label">Age</span><b>{{ profile.age }}</b></div>
+  <div class="tile stat"><span class="label">BMI</span><b>{{ bmi|default:"–" }}</b></div>
+</section>
+
+<details class="tile addex" {% if not has_measurements or form.errors %}open{% endif %}>
+  <summary>Basic info and targets</summary>
+  <form method="post" class="stack profileform">
+    {% csrf_token %}
+    {% for field in form %}
+      <label class="field{% if field.name == 'goal' %} full{% endif %}">
+        <span class="label">{{ field.label }}</span>
+        {{ field }}
+        {% for error in field.errors %}<span class="error">{{ error }}</span>{% endfor %}
+      </label>
+    {% endfor %}
+    <p class="muted full">Saving also logs today's weight (and waist, if filled) for your body trend.</p>
+    <button class="btn wide full">Save profile</button>
+  </form>
+</details>
+
+<section class="reporthead" id="report">
+  <div>
+    <h2 class="sectitle">Report</h2>
+    <p class="muted">{{ report.start|date:"j M" }} – {{ report.end|date:"j M Y" }}</p>
+  </div>
+  <nav class="segmented" aria-label="Report range">
+    {% for r in ranges %}
+      <a href="?days={{ r }}#report" class="{% if r == report.days %}on{% endif %}">{{ r }} days</a>
+    {% endfor %}
+  </nav>
+</section>
+
+<section class="insights">
+  {% for status, title, detail in report.insights %}
+    <div class="insight {{ status }}">
+      <span class="pill {{ status }}">{% if status == 'good' %}On track{% elif status == 'warn' %}Needs attention{% else %}Note{% endif %}</span>
+      <h3>{{ title }}</h3>
+      <p>{{ detail }}</p>
+    </div>
+  {% endfor %}
+</section>
+
+<section class="bento three">
+  <div class="tile stat">
+    <span class="label">Workouts</span>
+    <b>{{ report.training.workout_days }}<small> days</small></b>
+    <span class="sub">{% if report.training.consistency is not None %}{{ report.training.consistency }}% of planned{% else %}No planned days yet{% endif %}</span>
+  </div>
+  <div class="tile stat">
+    <span class="label">Avg calories</span>
+    <b>{{ report.nutrition.avg_calories|default:"–" }}<small> kcal</small></b>
+    <span class="sub">Target {{ report.nutrition.calorie_target }}</span>
+  </div>
+  <div class="tile stat">
+    <span class="label">Avg protein</span>
+    <b>{{ report.nutrition.avg_protein|default:"–" }}<small> g</small></b>
+    <span class="sub">Target {{ report.nutrition.protein_target }}</span>
+  </div>
+  <div class="tile stat">
+    <span class="label">Weight change</span>
+    <b>{% if report.body.weight_change is not None %}{{ report.body.weight_change|stringformat:"+.1f" }}{% else %}–{% endif %}<small> kg</small></b>
+    <span class="sub">{% if report.body.rate_per_week is not None %}{{ report.body.rate_per_week|stringformat:"+.2f" }} kg / week{% else %}Need 2+ weigh-ins{% endif %}</span>
+  </div>
+  <div class="tile stat">
+    <span class="label">Sets logged</span>
+    <b>{{ report.training.total_sets }}</b>
+    <span class="sub">{{ report.training.total_volume }} kg total volume</span>
+  </div>
+  <div class="tile stat">
+    <span class="label">Food logged</span>
+    <b>{{ report.nutrition.logged_days }}<small> / {{ report.days }} days</small></b>
+    <span class="sub">Protein hit {{ report.nutrition.protein_days_hit }} days</span>
+  </div>
+</section>
+
+<section class="charts">
+  <figure class="tile chartcard">
+    <figcaption><h3>Calories per day</h3><span class="muted">Dark bars reached the {{ report.nutrition.calorie_target }} kcal target</span></figcaption>
+    <div class="chart" data-chart="calories" data-kind="bar"></div>
+  </figure>
+  <figure class="tile chartcard">
+    <figcaption><h3>Protein per day</h3><span class="muted">Dark bars reached the {{ report.nutrition.protein_target }} g target</span></figcaption>
+    <div class="chart" data-chart="protein" data-kind="bar"></div>
+  </figure>
+  <figure class="tile chartcard">
+    <figcaption><h3>Body weight</h3><span class="muted">From your weigh-ins (kg)</span></figcaption>
+    <div class="chart" data-chart="weight" data-kind="line"></div>
+  </figure>
+  <figure class="tile chartcard">
+    <figcaption><h3>Training volume per week</h3><span class="muted">Reps × weight, all exercises (kg)</span></figcaption>
+    <div class="chart" data-chart="volume" data-kind="bar"></div>
+  </figure>
+</section>
+
+<section class="tile">
+  <span class="label">Sets per muscle group</span>
+  <div class="hbars">
+    {% for m in report.training.muscle_sets %}
+      <div class="hbar">
+        <span class="hbar-name">{{ m.name }}</span>
+        <span class="hbar-track"><i style="width: {{ m.pct }}%"></i></span>
+        <span class="hbar-val">{{ m.sets }} <small>({{ m.per_week }}/wk)</small></span>
+      </div>
+    {% empty %}
+      <p class="muted">No sets logged in this period.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="tile">
+  <span class="label">Strength progress (best set per session)</span>
+  {% if report.training.strength %}
+    <div class="tablewrap" id="strength-table">
+      <table class="table">
+        <thead><tr><th>Exercise</th><th>Latest best</th><th>Change</th></tr></thead>
+        <tbody>
+          {% for row in report.training.strength %}
+            <tr{% if forloop.counter > 8 %} class="more"{% endif %}>
+              <td><b>{{ row.name }}</b><br><span class="muted">{{ row.sessions }} session{{ row.sessions|pluralize }}{% if row.stalled %} · <span class="pill warn">Stalled</span>{% endif %}</span></td>
+              <td>{{ row.last }}<br><span class="muted">from {{ row.first }}</span></td>
+              <td class="change {% if row.change > 0 %}up{% elif row.change < 0 %}down{% endif %}">{{ row.change_label }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if report.training.strength|length > 8 %}
+      <button type="button" class="btn ghost small showall" data-show-all="strength-table">Show all {{ report.training.strength|length }} exercises</button>
+    {% endif %}
+  {% else %}
+    <p class="muted">Log sets with weights to see progress.</p>
+  {% endif %}
+</section>
+
+<a class="tile askcoach" href="{% url 'coach' %}">Ask the AI coach about this report ›</a>
+
+{{ report.charts|json_script:"chart-data" }}
+{% endblock %}

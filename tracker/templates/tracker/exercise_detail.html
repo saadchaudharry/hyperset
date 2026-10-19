@@ -1,0 +1,53 @@
+{% extends "tracker/base.html" %}
+{% block title %}{{ exercise.name }}{% endblock %}
+{% block content %}
+
+<section class="tile hero">
+  <a class="back" href="{% url 'exercises' %}">‹ All exercises</a>
+  <h1>{{ exercise.name }}</h1>
+  <div class="chips">
+    <span class="chip">{{ exercise.get_muscle_group_display }}</span>
+    <span class="chip">{{ exercise.get_equipment_display }}</span>
+    <span class="chip">{{ exercise.get_category_display }}</span>
+    {% for item in plan_items %}<span class="chip green">{{ item.day.get_weekday_display }}: {{ item.sets }} × {{ item.reps }}</span>{% endfor %}
+  </div>
+  <a class="video" href="{{ video_url }}" target="_blank" rel="noopener">Watch form videos</a>
+</section>
+
+{% if exercise.instructions %}
+  <section class="tile">
+    <span class="label">How to do it</span>
+    <div class="howto-body">{{ exercise.instructions|linebreaksbr }}</div>
+  </section>
+{% endif %}
+
+<section class="tile">
+  <span class="label">Your history</span>
+  {% for log in logs %}
+    <div class="histrow">
+      <a href="{% url 'day' log.date.isoformat %}#ex-{{ exercise.id }}">{{ log.date|date:"D j M Y" }}</a>
+      <span class="histsets">
+        {% for s in log.sets.all %}<span class="chip">{{ s.reps }} × {{ s.weight_kg|floatformat:"-2" }} kg</span>{% empty %}<span class="muted">No sets</span>{% endfor %}
+      </span>
+      {% if log.completed %}<span class="badge">Done</span>{% endif %}
+    </div>
+  {% empty %}
+    <p class="muted">Not logged yet.</p>
+  {% endfor %}
+</section>
+
+<details class="tile addex">
+  <summary>Edit exercise</summary>
+  <form method="post" class="stack">
+    {% csrf_token %}
+    {% for field in form %}
+      <label class="field">
+        <span class="label">{{ field.label }}</span>
+        {{ field }}
+        {% for error in field.errors %}<span class="error">{{ error }}</span>{% endfor %}
+      </label>
+    {% endfor %}
+    <button class="btn wide">Save</button>
+  </form>
+</details>
+{% endblock %}

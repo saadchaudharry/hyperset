@@ -1,0 +1,52 @@
+{% extends "tracker/base.html" %}
+{% block title %}Exercises{% endblock %}
+{% block content %}
+
+<section class="tile hero">
+  <span class="label">Library</span>
+  <h1>Exercises</h1>
+  <p>{{ exercises|length }} exercise{{ exercises|length|pluralize }} shown. Add your own, or tap one to edit its form guide and see your history.</p>
+</section>
+
+<form class="tile filters" method="get">
+  <input type="search" name="q" value="{{ query }}" placeholder="Search by name…" aria-label="Search">
+  <div class="inline">
+    <select name="muscle" aria-label="Muscle group">
+      <option value="">All muscles</option>
+      {% for key, label in muscle_choices %}<option value="{{ key }}" {% if key == muscle %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <select name="equipment" aria-label="Equipment">
+      <option value="">All equipment</option>
+      {% for key, label in equipment_choices %}<option value="{{ key }}" {% if key == equipment %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <button class="btn">Filter</button>
+</form>
+
+<details class="tile addex" {% if show_form %}open{% endif %}>
+  <summary>+ Add a new exercise</summary>
+  <form method="post" class="stack">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <label class="field">
+        <span class="label">{{ field.label }}</span>
+        {{ field }}
+        {% for error in field.errors %}<span class="error">{{ error }}</span>{% endfor %}
+      </label>
+    {% endfor %}
+    <button class="btn wide">Add exercise</button>
+  </form>
+</details>
+
+<section class="exlist">
+  {% for ex in exercises %}
+    <a class="exrow" href="{% url 'exercise_detail' ex.id %}">
+      <span class="exrow-name">{{ ex.name }}</span>
+      <span class="exrow-meta">{{ ex.get_muscle_group_display }} · {{ ex.get_equipment_display }} · {{ ex.get_category_display }}</span>
+    </a>
+  {% empty %}
+    <div class="tile empty">No exercises match. Try another search or add it above.</div>
+  {% endfor %}
+</section>
+{% endblock %}

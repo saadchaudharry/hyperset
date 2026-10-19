@@ -1,0 +1,5 @@
+Django>=5.1,<5.3
+litellm>=1.70
+markdown>=3.5
+gunicorn>=22
+whitenoise>=6.6
